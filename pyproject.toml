@@ -1,0 +1,9 @@
+[project]
+name = "rsa-gui"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "slint>=1.14.1b1",
+]
