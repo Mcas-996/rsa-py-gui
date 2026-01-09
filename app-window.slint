@@ -1,4 +1,4 @@
-import { Button, VerticalBox, HorizontalBox, TextEdit, GroupBox, StandardListView, Switch, TabWidget } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, TextEdit, GroupBox, StandardListView, Switch, TabWidget, ComboBox } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
     in-out property<string> plaintext: "";
@@ -18,6 +18,9 @@ export component AppWindow inherits Window {
     in-out property<string> file-status: "";
     in-out property<[StandardListViewItem]> rsa-file-items: [];
 
+    // Settings
+    in-out property<int> language-index: 0; // 0=English, 1=Chinese
+
     callback generate-keys();
     callback encrypt-text(string);
     callback decrypt-text(string);
@@ -34,9 +37,12 @@ export component AppWindow inherits Window {
     callback decrypt-file();
     callback get-rsa-file-list();
 
+    // Settings callbacks
+    callback set-language(int);
+
     TabWidget {
         Tab {
-            title: "Text";
+            title: (root.language-index == 0 ? "Text" : "文本");
 
             VerticalBox {
                 padding: 15px;
@@ -53,16 +59,16 @@ export component AppWindow inherits Window {
                 HorizontalBox {
                     spacing: 10px;
                     Button {
-                        text: "Generate Keys";
+                        text: (root.language-index == 0 ? "Generate Keys" : "生成密钥");
                         clicked => { root.generate-keys(); }
                     }
                     Button {
-                        text: "Save Keys";
+                        text: (root.language-index == 0 ? "Save Keys" : "保存密钥");
                         clicked => { root.save-keys(); }
                         enabled: has-keys;
                     }
                     Button {
-                        text: "Load Keys";
+                        text: (root.language-index == 0 ? "Load Keys" : "加载密钥");
                         clicked => { root.load-keys(); }
                     }
                 }
@@ -71,18 +77,18 @@ export component AppWindow inherits Window {
                 HorizontalBox {
                     spacing: 10px;
                     GroupBox {
-                        title: "Plaintext";
+                        title: (root.language-index == 0 ? "Plaintext" : "明文");
                         TextEdit {
                             text <=> root.plaintext;
-                            placeholder-text: "Enter text to encrypt";
+                            placeholder-text: (root.language-index == 0 ? "Enter text to encrypt" : "输入要加密的文本");
                             wrap: word-wrap;
                         }
                     }
                     GroupBox {
-                        title: "Ciphertext (Base64)";
+                        title: (root.language-index == 0 ? "Ciphertext (Base64)" : "密文 (Base64)");
                         TextEdit {
                             text <=> root.ciphertext;
-                            placeholder-text: "Enter Base64 ciphertext to decrypt";
+                            placeholder-text: (root.language-index == 0 ? "Enter Base64 ciphertext to decrypt" : "输入要解密的Base64密文");
                             wrap: word-wrap;
                         }
                     }
@@ -92,7 +98,7 @@ export component AppWindow inherits Window {
                 HorizontalBox {
                     spacing: 10px;
                     Text {
-                        text: "Preview:";
+                        text: (root.language-index == 0 ? "Preview:" : "预览:");
                         font-weight: 700;
                     }
                     Switch {
@@ -109,27 +115,27 @@ export component AppWindow inherits Window {
                 HorizontalBox {
                     spacing: 10px;
                     Button {
-                        text: "Encrypt >";
+                        text: (root.language-index == 0 ? "Encrypt >" : "加密 >");
                         clicked => { root.encrypt-text(root.plaintext); }
                         enabled: has-keys && plaintext != "";
                     }
                     Button {
-                        text: "Save Ciphertext";
+                        text: (root.language-index == 0 ? "Save Ciphertext" : "保存密文");
                         clicked => { root.save-ciphertext-bin(); }
                     }
                     Button {
-                        text: "Refresh List";
+                        text: (root.language-index == 0 ? "Refresh List" : "刷新列表");
                         clicked => { root.get-ciphertext-list(); }
                     }
                     Button {
-                        text: "Load Ciphertext";
+                        text: (root.language-index == 0 ? "Load Ciphertext" : "加载密文");
                         clicked => {
                             root.load-ciphertext-file(root.ciphertext-items[root.ciphertext-items.length - 1].text);
                         }
                         enabled: has-keys && ciphertext-items.length > 0;
                     }
                     Button {
-                        text: "< Decrypt";
+                        text: (root.language-index == 0 ? "< Decrypt" : "< 解密");
                         clicked => { root.decrypt-text(root.ciphertext); }
                         enabled: has-keys && ciphertext != "";
                     }
@@ -137,7 +143,7 @@ export component AppWindow inherits Window {
 
                 // Ciphertext file list
                 Text {
-                    text: "Saved ciphertext files:";
+                    text: (root.language-index == 0 ? "Saved ciphertext files:" : "已保存的密文文件:");
                 }
                 StandardListView {
                     model: ciphertext-items;
@@ -147,7 +153,7 @@ export component AppWindow inherits Window {
         }
 
         Tab {
-            title: "File";
+            title: (root.language-index == 0 ? "File" : "文件");
 
             VerticalBox {
                 padding: 15px;
@@ -164,16 +170,16 @@ export component AppWindow inherits Window {
                 HorizontalBox {
                     spacing: 10px;
                     Button {
-                        text: "Generate Keys";
+                        text: (root.language-index == 0 ? "Generate Keys" : "生成密钥");
                         clicked => { root.generate-keys(); }
                     }
                     Button {
-                        text: "Save Keys";
+                        text: (root.language-index == 0 ? "Save Keys" : "保存密钥");
                         clicked => { root.save-keys(); }
                         enabled: has-keys;
                     }
                     Button {
-                        text: "Load Keys";
+                        text: (root.language-index == 0 ? "Load Keys" : "加载密钥");
                         clicked => { root.load-keys(); }
                     }
                 }
@@ -185,13 +191,13 @@ export component AppWindow inherits Window {
 
                 // Source file selection
                 Text {
-                    text: "Source File:";
+                    text: (root.language-index == 0 ? "Source File:" : "源文件:");
                     font-weight: 700;
                 }
                 HorizontalBox {
                     spacing: 10px;
                     Button {
-                        text: "Select File";
+                        text: (root.language-index == 0 ? "Select File" : "选择文件");
                         clicked => { root.select-source-file(); }
                     }
                     Text {
@@ -211,7 +217,7 @@ export component AppWindow inherits Window {
                 // Encrypt button
                 HorizontalBox {
                     Button {
-                        text: "Encrypt →";
+                        text: (root.language-index == 0 ? "Encrypt ->" : "加密 ->");
                         clicked => { root.encrypt-file(); }
                         enabled: has-keys && root.selected-file != "";
                     }
@@ -224,17 +230,17 @@ export component AppWindow inherits Window {
 
                 // Cipher file selection
                 Text {
-                    text: "Encrypted File:";
+                    text: (root.language-index == 0 ? "Encrypted File:" : "加密文件:");
                     font-weight: 700;
                 }
                 HorizontalBox {
                     spacing: 10px;
                     Button {
-                        text: "Select Cipher";
+                        text: (root.language-index == 0 ? "Select Cipher" : "选择密文");
                         clicked => { root.select-cipher-file(); }
                     }
                     Button {
-                        text: "Refresh";
+                        text: (root.language-index == 0 ? "Refresh" : "刷新");
                         clicked => { root.get-rsa-file-list(); }
                     }
                     Text {
@@ -253,7 +259,7 @@ export component AppWindow inherits Window {
                 // Decrypt button
                 HorizontalBox {
                     Button {
-                        text: "← Decrypt";
+                        text: (root.language-index == 0 ? "<- Decrypt" : "<- 解密");
                         clicked => { root.decrypt-file(); }
                         enabled: has-keys && root.selected-cipher != "";
                     }
@@ -292,6 +298,93 @@ export component AppWindow inherits Window {
                     color: root.file-status != "" ? #2e7d32 : #cccccc;
                     font-size: 12px;
                     horizontal-alignment: center;
+                }
+            }
+        }
+
+        Tab {
+            title: (root.language-index == 0 ? "Settings" : "设置");
+
+            VerticalBox {
+                padding: 15px;
+                spacing: 15px;
+
+                // Status bar
+                Text {
+                    text: status;
+                    color: has-keys ? #2e7d32 : #c62828;
+                    horizontal-alignment: center;
+                }
+
+                // Language setting
+                HorizontalBox {
+                    spacing: 10px;
+                    Text {
+                        text: (root.language-index == 0 ? "Language:" : "语言:");
+                        font-weight: 700;
+                        vertical-alignment: center;
+                    }
+                    ComboBox {
+                        model: ["English", "中文"];
+                        current-value: (root.language-index == 0 ? "English" : "中文");
+                        current-index: root.language-index;
+                        selected(value) => {
+                            root.language-index = (value == "English" ? 0 : 1);
+                            root.set-language(root.language-index);
+                        }
+                    }
+                }
+
+                // Preview setting
+                HorizontalBox {
+                    spacing: 10px;
+                    Text {
+                        text: (root.language-index == 0 ? "Preview enabled:" : "预览已启用:");
+                        vertical-alignment: center;
+                    }
+                    Switch {
+                        checked <=> root.preview-enabled;
+                    }
+                }
+
+                // Key management buttons
+                HorizontalBox {
+                    spacing: 10px;
+                    Button {
+                        text: (root.language-index == 0 ? "Generate Keys" : "生成密钥");
+                        clicked => { root.generate-keys(); }
+                    }
+                    Button {
+                        text: (root.language-index == 0 ? "Save Keys" : "保存密钥");
+                        clicked => { root.save-keys(); }
+                        enabled: has-keys;
+                    }
+                    Button {
+                        text: (root.language-index == 0 ? "Load Keys" : "加载密钥");
+                        clicked => { root.load-keys(); }
+                    }
+                }
+
+                // Divider
+                HorizontalBox {
+                    Rectangle { height: 1px; background: #cccccc; }
+                }
+
+                // About
+                Text {
+                    text: (root.language-index == 0 ? "RSA GUI v0.1.0" : "RSA GUI v0.1.0");
+                    font-size: 14px;
+                    font-weight: 700;
+                }
+                Text {
+                    text: (root.language-index == 0 ? "Pure RSA file encryption" : "纯 RSA 文件加密");
+                    font-size: 12px;
+                    color: #666666;
+                }
+                Text {
+                    text: (root.language-index == 0 ? "Expansion rate: ~1.35x" : "膨胀率: ~1.35倍");
+                    font-size: 12px;
+                    color: #666666;
                 }
             }
         }
