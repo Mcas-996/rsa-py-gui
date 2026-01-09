@@ -1,4 +1,4 @@
-# RSA GUI
+# RSA 
 
 A modern desktop application for RSA encryption and decryption, built with Python and Slint UI framework.
 
@@ -16,15 +16,22 @@ A modern desktop application for RSA encryption and decryption, built with Pytho
 
 ## Installation
 
-```bash
-# Install dependencies using pip
-pip install -e .
+### 1. Download and Install uv
+
+**Windows (PowerShell):**
+```powershell
+irm https://astral.sh/uv/install.ps1 | iex
 ```
 
-Or using Poetry:
+**macOS / Linux:**
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+### 2. Install Dependencies
 
 ```bash
-poetry install
+uv sync
 ```
 
 ## Usage
@@ -32,13 +39,13 @@ poetry install
 ### Run the Application
 
 ```bash
-python main.py
+uv run python main.py
 ```
 
 ### Run the Test Script
 
 ```bash
-python test.py
+uv run python test.py
 ```
 
 ## Project Structure
