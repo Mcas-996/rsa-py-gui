@@ -1,4 +1,4 @@
-import { Button, VerticalBox, HorizontalBox, TextEdit, LineEdit, GroupBox } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, TextEdit, GroupBox } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
     in-out property<string> plaintext: "";
@@ -46,16 +46,18 @@ export component AppWindow inherits Window {
             spacing: 10px;
             GroupBox {
                 title: "明文";
-                LineEdit {
+                TextEdit {
                     text <=> root.plaintext;
                     placeholder-text: "输入要加密的文本";
+                    wrap: word-wrap;
                 }
             }
             GroupBox {
                 title: "密文 (Base64)";
-                LineEdit {
+                TextEdit {
                     text <=> root.ciphertext;
                     placeholder-text: "输入要解密的 Base64 密文";
+                    wrap: word-wrap;
                 }
             }
         }

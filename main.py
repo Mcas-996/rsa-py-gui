@@ -1,6 +1,7 @@
 import slint
 from rsaa import RSA_plain
 import base64
+import os
 
 
 # slint.loader will look in `sys.path` for `app-window.slint`.
@@ -8,6 +9,7 @@ class App(slint.loader.app_window.AppWindow):
     def __init__(self):
         super().__init__()
         self.rsa = RSA_plain()
+        self.app_dir = os.path.dirname(os.path.abspath(__file__))
 
     @slint.callback
     def generate_keys(self):
@@ -40,8 +42,10 @@ class App(slint.loader.app_window.AppWindow):
     @slint.callback
     def save_keys(self):
         try:
-            self.rsa.save_private_key("private_key.pem")
-            self.rsa.save_public_key("public_key.pem")
+            private_path = os.path.join(self.app_dir, "private_key.pem")
+            public_path = os.path.join(self.app_dir, "public_key.pem")
+            self.rsa.save_private_key(private_path)
+            self.rsa.save_public_key(public_path)
             self.status = "密钥已保存到文件"
         except Exception as e:
             self.status = f"保存失败: {str(e)}"
@@ -49,12 +53,14 @@ class App(slint.loader.app_window.AppWindow):
     @slint.callback
     def load_keys(self):
         try:
-            self.rsa.load_private_key("private_key.pem")
+            private_path = os.path.join(self.app_dir, "private_key.pem")
+            self.rsa.load_private_key(private_path)
             self.has_keys = True
             self.status = "密钥已从文件加载"
         except FileNotFoundError:
             try:
-                self.rsa.load_public_key("public_key.pem")
+                public_path = os.path.join(self.app_dir, "public_key.pem")
+                self.rsa.load_public_key(public_path)
                 self.has_keys = True
                 self.status = "公钥已加载 (仅加密模式)"
             except FileNotFoundError:

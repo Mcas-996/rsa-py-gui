@@ -59,12 +59,12 @@ class RSA_plain:
         """保存私钥到文件"""
         if self._private_key is None:
             raise ValueError("Keys not generated. Call generate_keys() first.")
-        encoding = serialization.BestAvailableEncryption(password) if password else serialization.NoEncryption()
+        encryption = serialization.BestAvailableEncryption(password) if password else serialization.NoEncryption()
         with open(path, "wb") as f:
             f.write(self.private_key.private_bytes(
-                encoding=encoding,
+                encoding=serialization.Encoding.PEM,
                 format=serialization.PrivateFormat.PKCS8,
-                encryption_algorithm=encoding
+                encryption_algorithm=encryption
             ))
 
     def save_public_key(self, path: str):
