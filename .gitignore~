@@ -11,4 +11,8 @@ wheels/
 
 *.bin
 *.pem
+<<<<<<< HEAD
+main.spec
+=======
 *.spec
+>>>>>>> develop

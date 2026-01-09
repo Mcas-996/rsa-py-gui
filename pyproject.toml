@@ -8,3 +8,8 @@ dependencies = [
     "cryptography>=46.0.3",
     "slint>=1.14.1b1",
 ]
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.17.0",
+]

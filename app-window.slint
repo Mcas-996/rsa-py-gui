@@ -3,7 +3,7 @@ import { Button, VerticalBox, HorizontalBox, TextEdit, GroupBox, StandardListVie
 export component AppWindow inherits Window {
     in-out property<string> plaintext: "";
     in-out property<string> ciphertext: "";
-    in-out property<string> status: "生成密钥后开始使用";
+    in-out property<string> status: "Generate keys to start";
     in-out property<bool> has-keys: false;
     in-out property<[StandardListViewItem]> ciphertext-items: [];
 
@@ -20,85 +20,85 @@ export component AppWindow inherits Window {
         padding: 15px;
         spacing: 10px;
 
-        // 状态栏
+        // Status bar
         Text {
             text: status;
             color: has-keys ? #2e7d32 : #c62828;
             horizontal-alignment: center;
         }
 
-        // 密钥管理按钮
+        // Key management buttons
         HorizontalBox {
             spacing: 10px;
             Button {
-                text: "生成密钥";
+                text: "Generate Keys";
                 clicked => { root.generate-keys(); }
             }
             Button {
-                text: "保存密钥";
+                text: "Save Keys";
                 clicked => { root.save-keys(); }
                 enabled: has-keys;
             }
             Button {
-                text: "加载密钥";
+                text: "Load Keys";
                 clicked => { root.load-keys(); }
             }
         }
 
-        // 明文和密文输入框并排
+        // Plaintext and ciphertext inputs side by side
         HorizontalBox {
             spacing: 10px;
             GroupBox {
-                title: "明文";
+                title: "Plaintext";
                 TextEdit {
                     text <=> root.plaintext;
-                    placeholder-text: "输入要加密的文本";
+                    placeholder-text: "Enter text to encrypt";
                     wrap: word-wrap;
                 }
             }
             GroupBox {
-                title: "密文 (Base64)";
+                title: "Ciphertext (Base64)";
                 TextEdit {
                     text <=> root.ciphertext;
-                    placeholder-text: "输入要解密的 Base64 密文";
+                    placeholder-text: "Enter Base64 ciphertext to decrypt";
                     wrap: word-wrap;
                 }
             }
         }
 
-        // 操作按钮
+        // Action buttons
         HorizontalBox {
             spacing: 10px;
             Button {
-                text: "加密 >";
+                text: "Encrypt >";
                 clicked => { root.encrypt-text(root.plaintext); }
                 enabled: has-keys && plaintext != "";
             }
             Button {
-                text: "保存密文";
+                text: "Save Ciphertext";
                 clicked => { root.save-ciphertext-bin(); }
             }
             Button {
-                text: "刷新列表";
+                text: "Refresh List";
                 clicked => { root.get-ciphertext-list(); }
             }
             Button {
-                text: "加载密文";
+                text: "Load Ciphertext";
                 clicked => {
                     root.load-ciphertext-file(root.ciphertext-items[root.ciphertext-items.length - 1].text);
                 }
                 enabled: has-keys && ciphertext-items.length > 0;
             }
             Button {
-                text: "< 解密";
+                text: "< Decrypt";
                 clicked => { root.decrypt-text(root.ciphertext); }
                 enabled: has-keys && ciphertext != "";
             }
         }
 
-        // 密文文件列表
+        // Ciphertext file list
         Text {
-            text: "已保存的密文文件:";
+            text: "Saved ciphertext files:";
         }
         StandardListView {
             model: ciphertext-items;
