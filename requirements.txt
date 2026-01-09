@@ -1,0 +1,4 @@
+uv
+slint
+base64
+cryptography
