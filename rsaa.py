@@ -109,7 +109,7 @@ class RSA_plain:
 
     @staticmethod
     def list_ciphertext_files(dir_path: str) -> list[str]:
-        """列出目录下的所有 .bin 密文文件"""
+        """List all .bin ciphertext files in directory"""
         if not os.path.exists(dir_path):
             return []
         return [f for f in os.listdir(dir_path) if f.endswith(".bin")]
