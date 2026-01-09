@@ -1,10 +1,12 @@
-import { Button, VerticalBox, HorizontalBox, TextEdit, GroupBox, StandardListView } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, TextEdit, GroupBox, StandardListView, Switch } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
     in-out property<string> plaintext: "";
     in-out property<string> ciphertext: "";
     in-out property<string> status: "Generate keys to start";
+    in-out property<string> preview-status: "";
     in-out property<bool> has-keys: false;
+    in-out property<bool> preview-enabled: true;
     in-out property<[StandardListViewItem]> ciphertext-items: [];
 
     callback generate-keys();
@@ -63,6 +65,23 @@ export component AppWindow inherits Window {
                     placeholder-text: "Enter Base64 ciphertext to decrypt";
                     wrap: word-wrap;
                 }
+            }
+        }
+
+        // Preview status hint with switch
+        HorizontalBox {
+            spacing: 10px;
+            Text {
+                text: "Preview:";
+                font-weight: 700;
+            }
+            Switch {
+                checked <=> root.preview-enabled;
+            }
+            Text {
+                text: root.preview-status;
+                color: root.preview-status != "" ? #2e7d32 : #666666;
+                font-size: 12px;
             }
         }
 
