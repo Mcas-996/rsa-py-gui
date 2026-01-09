@@ -1,4 +1,4 @@
-# RSA GUI
+# RSA 
 
 A modern desktop application for RSA encryption and decryption, built with Python and Slint UI framework.
 
