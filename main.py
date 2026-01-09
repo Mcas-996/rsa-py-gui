@@ -44,6 +44,9 @@ STRINGS = {
         "ok-saved": "OK Saved: ",
         "file-size": "File size: {} bytes",
         "fail-dec": "FAIL Decrypt failed: ",
+        "select-workdir": "Select work directory",
+        "workdir-changed": "Work directory updated",
+        "workdir-invalid": "Invalid directory",
     },
     1: {  # Chinese
         "keys-generated": "密钥已生成",
@@ -80,6 +83,9 @@ STRINGS = {
         "ok-saved": "✓ 已保存: ",
         "file-size": "文件大小: {} 字节",
         "fail-dec": "✗ 解密失败: ",
+        "select-workdir": "选择工作目录",
+        "workdir-changed": "工作目录已更新",
+        "workdir-invalid": "无效的目录",
     },
 }
 
@@ -94,6 +100,9 @@ class App(slint.loader.app_window.AppWindow):
         self._last_plaintext = ""
         self.preview_status = ""
         self.language = 0  # 0=English, 1=Chinese
+        # Load work directory from settings
+        self._settings_file = os.path.join(self.app_dir, ".rsa_gui_settings")
+        self._load_settings()
         # Hide tkinter window for file dialogs
         self._tk_root = tk.Tk()
         self._tk_root.withdraw()
@@ -104,6 +113,54 @@ class App(slint.loader.app_window.AppWindow):
     def _(self, key: str) -> str:
         """Get localized string"""
         return STRINGS[self.language].get(key, key)
+
+    def _load_settings(self):
+        """Load settings from file"""
+        try:
+            if os.path.exists(self._settings_file):
+                with open(self._settings_file, 'r') as f:
+                    for line in f:
+                        if '=' in line:
+                            key, value = line.strip().split('=', 1)
+                            if key == 'work_dir' and os.path.isdir(value):
+                                self.work_dir = value
+                                return
+        except Exception:
+            pass
+        # Default to app directory
+        self.work_dir = self.app_dir
+
+    def _save_settings(self):
+        """Save settings to file"""
+        try:
+            with open(self._settings_file, 'w') as f:
+                f.write(f"work_dir={self.work_dir}\n")
+        except Exception as e:
+            print(f"Failed to save settings: {e}")
+
+    def _get_work_subdir(self, subdir: str) -> str:
+        """Get path for subdirectory under work directory"""
+        return os.path.join(self.work_dir, subdir)
+
+    @slint.callback
+    def select_work_dir(self):
+        """Select work directory"""
+        directory = filedialog.askdirectory(
+            title=self._("select-workdir"),
+            parent=self._tk_root,
+            initialdir=self.work_dir,
+        )
+        if directory:
+            self.work_dir = directory
+
+    @slint.callback
+    def apply_work_dir(self):
+        """Apply work directory and save settings"""
+        if self.work_dir and os.path.isdir(self.work_dir):
+            self._save_settings()
+            self.status = self._("workdir-changed")
+        else:
+            self.status = self._("workdir-invalid")
 
     @slint.callback
     def generate_keys(self):
@@ -151,8 +208,8 @@ class App(slint.loader.app_window.AppWindow):
     @slint.callback
     def save_keys(self):
         try:
-            private_path = os.path.join(self.app_dir, "private_key.pem")
-            public_path = os.path.join(self.app_dir, "public_key.pem")
+            private_path = self._get_work_subdir("private_key.pem")
+            public_path = self._get_work_subdir("public_key.pem")
             self.rsa.save_private_key(private_path)
             self.rsa.save_public_key(public_path)
             self.status = self._("keys-saved")
@@ -162,13 +219,13 @@ class App(slint.loader.app_window.AppWindow):
     @slint.callback
     def load_keys(self):
         try:
-            private_path = os.path.join(self.app_dir, "private_key.pem")
+            private_path = self._get_work_subdir("private_key.pem")
             self.rsa.load_private_key(private_path)
             self.has_keys = True
             self.status = self._("keys-loaded")
         except FileNotFoundError:
             try:
-                public_path = os.path.join(self.app_dir, "public_key.pem")
+                public_path = self._get_work_subdir("public_key.pem")
                 self.rsa.load_public_key(public_path)
                 self.has_keys = True
                 self.status = self._("pub-loaded")
@@ -180,7 +237,7 @@ class App(slint.loader.app_window.AppWindow):
     @slint.callback
     def get_ciphertext_list(self):
         """Get ciphertext file list"""
-        ciphertext_dir = os.path.join(self.app_dir, "ciphertexts")
+        ciphertext_dir = self._get_work_subdir("ciphertexts")
         files = RSA_plain.list_ciphertext_files(ciphertext_dir)
         # Use Slint ListModel
         self.ciphertext_items = slint.ListModel([{"text": f} for f in files])
@@ -189,7 +246,7 @@ class App(slint.loader.app_window.AppWindow):
     def load_ciphertext_file(self, filename: str):
         """Load ciphertext file"""
         try:
-            filepath = os.path.join(self.app_dir, "ciphertexts", filename)
+            filepath = os.path.join(self._get_work_subdir("ciphertexts"), filename)
             ciphertext = RSA_plain.load_ciphertext(filepath)
             self.ciphertext = base64.b64encode(ciphertext).decode("ascii")
             self.current_ciphertext = ciphertext
@@ -252,7 +309,7 @@ class App(slint.loader.app_window.AppWindow):
     @slint.callback
     def select_cipher_file(self):
         """Select encrypted file to decrypt"""
-        rsa_dir = os.path.join(self.app_dir, "ciphertexts")
+        rsa_dir = self._get_work_subdir("ciphertexts")
         filepath = filedialog.askopenfilename(
             title=self._("select-cipher"),
             parent=self._tk_root,
@@ -266,7 +323,7 @@ class App(slint.loader.app_window.AppWindow):
     @slint.callback
     def get_rsa_file_list(self):
         """Get .rsa file list"""
-        rsa_dir = os.path.join(self.app_dir, "ciphertexts")
+        rsa_dir = self._get_work_subdir("ciphertexts")
         if not os.path.exists(rsa_dir):
             os.makedirs(rsa_dir, exist_ok=True)
         files = [f for f in os.listdir(rsa_dir) if f.endswith(".rsa")]
@@ -290,7 +347,7 @@ class App(slint.loader.app_window.AppWindow):
             return
 
         try:
-            ciphertext_dir = os.path.join(self.app_dir, "ciphertexts")
+            ciphertext_dir = self._get_work_subdir("ciphertexts")
             os.makedirs(ciphertext_dir, exist_ok=True)
 
             with open(self.selected_file, "rb") as f:
@@ -330,7 +387,7 @@ class App(slint.loader.app_window.AppWindow):
                 self.file_status = self._("invalid-format")
                 return
 
-            output_dir = os.path.join(self.app_dir, "decrypted")
+            output_dir = self._get_work_subdir("decrypted")
             os.makedirs(output_dir, exist_ok=True)
             dst_path = os.path.join(output_dir, metadata["filename"])
 

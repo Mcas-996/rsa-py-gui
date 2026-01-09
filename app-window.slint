@@ -20,6 +20,7 @@ export component AppWindow inherits Window {
 
     // Settings
     in-out property<int> language-index: 0; // 0=English, 1=Chinese
+    in-out property<string> work-dir: "";
 
     callback generate-keys();
     callback encrypt-text(string);
@@ -39,6 +40,8 @@ export component AppWindow inherits Window {
 
     // Settings callbacks
     callback set-language(int);
+    callback select-work-dir();
+    callback apply-work-dir();
 
     TabWidget {
         Tab {
@@ -345,6 +348,39 @@ export component AppWindow inherits Window {
                     Switch {
                         checked <=> root.preview-enabled;
                     }
+                }
+
+                // Work directory setting
+                HorizontalBox {
+                    spacing: 10px;
+                    Text {
+                        text: (root.language-index == 0 ? "Work directory:" : "工作目录:");
+                        font-weight: 700;
+                        vertical-alignment: center;
+                    }
+                }
+                HorizontalBox {
+                    spacing: 10px;
+                    Button {
+                        text: (root.language-index == 0 ? "Browse" : "浏览");
+                        clicked => { root.select-work-dir(); }
+                    }
+                    Button {
+                        text: (root.language-index == 0 ? "Apply" : "应用");
+                        clicked => { root.apply-work-dir(); }
+                        enabled: root.work-dir != "";
+                    }
+                }
+                Text {
+                    text: root.work-dir;
+                    color: root.work-dir != "" ? #333333 : #999999;
+                    font-size: 12px;
+                    horizontal-alignment: left;
+                }
+
+                // Divider
+                HorizontalBox {
+                    Rectangle { height: 1px; background: #cccccc; }
                 }
 
                 // Key management buttons
