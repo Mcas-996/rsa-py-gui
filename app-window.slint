@@ -1,4 +1,4 @@
-import { Button, VerticalBox, HorizontalBox, TextEdit, GroupBox, StandardListView, Switch } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, TextEdit, GroupBox, StandardListView, Switch, TabWidget } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
     in-out property<string> plaintext: "";
@@ -9,6 +9,15 @@ export component AppWindow inherits Window {
     in-out property<bool> preview-enabled: true;
     in-out property<[StandardListViewItem]> ciphertext-items: [];
 
+    // File tab properties
+    in-out property<string> selected-file: "";
+    in-out property<string> selected-cipher: "";
+    in-out property<string> file-info: "";
+    in-out property<string> file-progress: "";
+    in-out property<float> progress-value: 0;
+    in-out property<string> file-status: "";
+    in-out property<[StandardListViewItem]> rsa-file-items: [];
+
     callback generate-keys();
     callback encrypt-text(string);
     callback decrypt-text(string);
@@ -18,110 +27,273 @@ export component AppWindow inherits Window {
     callback get-ciphertext-list();
     callback load-ciphertext-file(string);
 
-    VerticalBox {
-        padding: 15px;
-        spacing: 10px;
+    // File callbacks
+    callback select-source-file();
+    callback select-cipher-file();
+    callback encrypt-file();
+    callback decrypt-file();
+    callback get-rsa-file-list();
 
-        // Status bar
-        Text {
-            text: status;
-            color: has-keys ? #2e7d32 : #c62828;
-            horizontal-alignment: center;
-        }
+    TabWidget {
+        Tab {
+            title: "Text";
 
-        // Key management buttons
-        HorizontalBox {
-            spacing: 10px;
-            Button {
-                text: "Generate Keys";
-                clicked => { root.generate-keys(); }
-            }
-            Button {
-                text: "Save Keys";
-                clicked => { root.save-keys(); }
-                enabled: has-keys;
-            }
-            Button {
-                text: "Load Keys";
-                clicked => { root.load-keys(); }
-            }
-        }
+            VerticalBox {
+                padding: 15px;
+                spacing: 10px;
 
-        // Plaintext and ciphertext inputs side by side
-        HorizontalBox {
-            spacing: 10px;
-            GroupBox {
-                title: "Plaintext";
-                TextEdit {
-                    text <=> root.plaintext;
-                    placeholder-text: "Enter text to encrypt";
-                    wrap: word-wrap;
+                // Status bar
+                Text {
+                    text: status;
+                    color: has-keys ? #2e7d32 : #c62828;
+                    horizontal-alignment: center;
+                }
+
+                // Key management buttons
+                HorizontalBox {
+                    spacing: 10px;
+                    Button {
+                        text: "Generate Keys";
+                        clicked => { root.generate-keys(); }
+                    }
+                    Button {
+                        text: "Save Keys";
+                        clicked => { root.save-keys(); }
+                        enabled: has-keys;
+                    }
+                    Button {
+                        text: "Load Keys";
+                        clicked => { root.load-keys(); }
+                    }
+                }
+
+                // Plaintext and ciphertext inputs side by side
+                HorizontalBox {
+                    spacing: 10px;
+                    GroupBox {
+                        title: "Plaintext";
+                        TextEdit {
+                            text <=> root.plaintext;
+                            placeholder-text: "Enter text to encrypt";
+                            wrap: word-wrap;
+                        }
+                    }
+                    GroupBox {
+                        title: "Ciphertext (Base64)";
+                        TextEdit {
+                            text <=> root.ciphertext;
+                            placeholder-text: "Enter Base64 ciphertext to decrypt";
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+
+                // Preview status hint with switch
+                HorizontalBox {
+                    spacing: 10px;
+                    Text {
+                        text: "Preview:";
+                        font-weight: 700;
+                    }
+                    Switch {
+                        checked <=> root.preview-enabled;
+                    }
+                    Text {
+                        text: root.preview-status;
+                        color: root.preview-status != "" ? #2e7d32 : #666666;
+                        font-size: 12px;
+                    }
+                }
+
+                // Action buttons
+                HorizontalBox {
+                    spacing: 10px;
+                    Button {
+                        text: "Encrypt >";
+                        clicked => { root.encrypt-text(root.plaintext); }
+                        enabled: has-keys && plaintext != "";
+                    }
+                    Button {
+                        text: "Save Ciphertext";
+                        clicked => { root.save-ciphertext-bin(); }
+                    }
+                    Button {
+                        text: "Refresh List";
+                        clicked => { root.get-ciphertext-list(); }
+                    }
+                    Button {
+                        text: "Load Ciphertext";
+                        clicked => {
+                            root.load-ciphertext-file(root.ciphertext-items[root.ciphertext-items.length - 1].text);
+                        }
+                        enabled: has-keys && ciphertext-items.length > 0;
+                    }
+                    Button {
+                        text: "< Decrypt";
+                        clicked => { root.decrypt-text(root.ciphertext); }
+                        enabled: has-keys && ciphertext != "";
+                    }
+                }
+
+                // Ciphertext file list
+                Text {
+                    text: "Saved ciphertext files:";
+                }
+                StandardListView {
+                    model: ciphertext-items;
+                    height: 100px;
                 }
             }
-            GroupBox {
-                title: "Ciphertext (Base64)";
-                TextEdit {
-                    text <=> root.ciphertext;
-                    placeholder-text: "Enter Base64 ciphertext to decrypt";
-                    wrap: word-wrap;
+        }
+
+        Tab {
+            title: "File";
+
+            VerticalBox {
+                padding: 15px;
+                spacing: 10px;
+
+                // Status bar
+                Text {
+                    text: status;
+                    color: has-keys ? #2e7d32 : #c62828;
+                    horizontal-alignment: center;
+                }
+
+                // Key management buttons
+                HorizontalBox {
+                    spacing: 10px;
+                    Button {
+                        text: "Generate Keys";
+                        clicked => { root.generate-keys(); }
+                    }
+                    Button {
+                        text: "Save Keys";
+                        clicked => { root.save-keys(); }
+                        enabled: has-keys;
+                    }
+                    Button {
+                        text: "Load Keys";
+                        clicked => { root.load-keys(); }
+                    }
+                }
+
+                // Divider
+                HorizontalBox {
+                    Rectangle { height: 1px; background: #cccccc; }
+                }
+
+                // Source file selection
+                Text {
+                    text: "Source File:";
+                    font-weight: 700;
+                }
+                HorizontalBox {
+                    spacing: 10px;
+                    Button {
+                        text: "Select File";
+                        clicked => { root.select-source-file(); }
+                    }
+                    Text {
+                        text: root.selected-file;
+                        color: root.selected-file != "" ? #333333 : #999999;
+                        vertical-alignment: center;
+                    }
+                }
+
+                // Source file info
+                Text {
+                    text: root.file-info;
+                    color: root.file-info != "" ? #666666 : #cccccc;
+                    font-size: 12px;
+                }
+
+                // Encrypt button
+                HorizontalBox {
+                    Button {
+                        text: "Encrypt →";
+                        clicked => { root.encrypt-file(); }
+                        enabled: has-keys && root.selected-file != "";
+                    }
+                }
+
+                // Divider
+                HorizontalBox {
+                    Rectangle { height: 1px; background: #cccccc; }
+                }
+
+                // Cipher file selection
+                Text {
+                    text: "Encrypted File:";
+                    font-weight: 700;
+                }
+                HorizontalBox {
+                    spacing: 10px;
+                    Button {
+                        text: "Select Cipher";
+                        clicked => { root.select-cipher-file(); }
+                    }
+                    Button {
+                        text: "Refresh";
+                        clicked => { root.get-rsa-file-list(); }
+                    }
+                    Text {
+                        text: root.selected-cipher;
+                        color: root.selected-cipher != "" ? #333333 : #999999;
+                        vertical-alignment: center;
+                    }
+                }
+
+                // RSA file list
+                StandardListView {
+                    model: rsa-file-items;
+                    height: 80px;
+                }
+
+                // Decrypt button
+                HorizontalBox {
+                    Button {
+                        text: "← Decrypt";
+                        clicked => { root.decrypt-file(); }
+                        enabled: has-keys && root.selected-cipher != "";
+                    }
+                }
+
+                // Divider
+                HorizontalBox {
+                    Rectangle { height: 1px; background: #cccccc; }
+                }
+
+                // Progress bar (custom)
+                HorizontalBox {
+                    visible: root.progress-value > 0 && root.progress-value < 1;
+                    spacing: 0;
+                    Rectangle {
+                        height: 20px;
+                        background: #e0e0e0;
+                        border-radius: 10px;
+                        Rectangle {
+                            x: 0;
+                            y: 0;
+                            width: root.progress-value * 300px;
+                            height: 20px;
+                            background: #4caf50;
+                            border-radius: 10px;
+                        }
+                    }
+                }
+                Text {
+                    text: root.file-progress;
+                    color: root.file-progress != "" ? #2e7d32 : #666666;
+                    font-size: 12px;
+                }
+                Text {
+                    text: root.file-status;
+                    color: root.file-status != "" ? #2e7d32 : #cccccc;
+                    font-size: 12px;
+                    horizontal-alignment: center;
                 }
             }
-        }
-
-        // Preview status hint with switch
-        HorizontalBox {
-            spacing: 10px;
-            Text {
-                text: "Preview:";
-                font-weight: 700;
-            }
-            Switch {
-                checked <=> root.preview-enabled;
-            }
-            Text {
-                text: root.preview-status;
-                color: root.preview-status != "" ? #2e7d32 : #666666;
-                font-size: 12px;
-            }
-        }
-
-        // Action buttons
-        HorizontalBox {
-            spacing: 10px;
-            Button {
-                text: "Encrypt >";
-                clicked => { root.encrypt-text(root.plaintext); }
-                enabled: has-keys && plaintext != "";
-            }
-            Button {
-                text: "Save Ciphertext";
-                clicked => { root.save-ciphertext-bin(); }
-            }
-            Button {
-                text: "Refresh List";
-                clicked => { root.get-ciphertext-list(); }
-            }
-            Button {
-                text: "Load Ciphertext";
-                clicked => {
-                    root.load-ciphertext-file(root.ciphertext-items[root.ciphertext-items.length - 1].text);
-                }
-                enabled: has-keys && ciphertext-items.length > 0;
-            }
-            Button {
-                text: "< Decrypt";
-                clicked => { root.decrypt-text(root.ciphertext); }
-                enabled: has-keys && ciphertext != "";
-            }
-        }
-
-        // Ciphertext file list
-        Text {
-            text: "Saved ciphertext files:";
-        }
-        StandardListView {
-            model: ciphertext-items;
-            height: 100px;
         }
     }
 }

@@ -3,6 +3,8 @@ from rsaa import RSA_plain
 import base64
 import os
 from datetime import timedelta
+import tkinter as tk
+from tkinter import filedialog, messagebox
 
 
 # slint.loader will look in `sys.path` for `app-window.slint`.
@@ -14,6 +16,9 @@ class App(slint.loader.app_window.AppWindow):
         # 实时预览轮询相关
         self._last_plaintext = ""
         self.preview_status = ""
+        # 隐藏 tkinter 窗口（用于文件对话框）
+        self._tk_root = tk.Tk()
+        self._tk_root.withdraw()
         # 启动轮询 Timer (500ms间隔)
         self._preview_timer = slint.Timer()
         self._preview_timer.start(slint.TimerMode.Repeated, timedelta(seconds=0.5), lambda: self._poll_preview())
@@ -141,6 +146,141 @@ class App(slint.loader.app_window.AppWindow):
             self.preview_status = "✓ 预览已更新"
         except Exception as e:
             self.preview_status = f"加密错误：{str(e)}"
+
+    # ==================== 文件操作回调 ====================
+
+    @slint.callback
+    def select_source_file(self):
+        """选择源文件"""
+        filepath = filedialog.askopenfilename(
+            title="Select file to encrypt",
+            parent=self._tk_root,
+        )
+        if filepath:
+            self.selected_file = filepath
+            # 显示文件信息
+            size = os.path.getsize(filepath)
+            if size < 1024:
+                size_str = f"{size} B"
+            elif size < 1024 * 1024:
+                size_str = f"{size / 1024:.1f} KB"
+            else:
+                size_str = f"{size / (1024 * 1024):.1f} MB"
+            self.file_info = f"📄 {os.path.basename(filepath)} ({size_str})"
+            self.file_status = ""
+            self.progress_value = 0
+
+    @slint.callback
+    def select_cipher_file(self):
+        """选择密文文件"""
+        rsa_dir = os.path.join(self.app_dir, "ciphertexts")
+        filepath = filedialog.askopenfilename(
+            title="Select encrypted file",
+            parent=self._tk_root,
+            initialdir=rsa_dir,
+            filetypes=[("RSA encrypted files", "*.rsa"), ("All files", "*.*")],
+        )
+        if filepath:
+            self.selected_cipher = filepath
+            self.file_status = ""
+
+    @slint.callback
+    def get_rsa_file_list(self):
+        """获取 .rsa 文件列表"""
+        rsa_dir = os.path.join(self.app_dir, "ciphertexts")
+        if not os.path.exists(rsa_dir):
+            os.makedirs(rsa_dir, exist_ok=True)
+        files = [f for f in os.listdir(rsa_dir) if f.endswith(".rsa")]
+        self.rsa_file_items = slint.ListModel([{"text": f} for f in files])
+
+    def _progress_callback(self, processed: int, total: int):
+        """进度回调"""
+        if total > 0:
+            self.progress_value = processed / total
+            if processed < total:
+                percent = (processed * 100) // total
+                self.file_progress = f"Processing: {percent}% ({processed}/{total} bytes)"
+            else:
+                self.file_progress = "Complete!"
+
+    @slint.callback
+    def encrypt_file(self):
+        """加密文件"""
+        if not self.selected_file:
+            self.file_status = "请先选择文件"
+            return
+
+        try:
+            # 生成输出文件名
+            ciphertext_dir = os.path.join(self.app_dir, "ciphertexts")
+            os.makedirs(ciphertext_dir, exist_ok=True)
+
+            # 先加密获取文件名
+            with open(self.selected_file, "rb") as f:
+                sample = f.read(10)
+            dst_filename = RSA_plain.get_ciphertext_filename(sample) + ".rsa"
+            dst_path = os.path.join(ciphertext_dir, dst_filename)
+
+            # 执行加密
+            self.progress_value = 0
+            self.file_status = "加密中..."
+            result = self.rsa.encrypt_file(self.selected_file, dst_path,
+                                           self._progress_callback)
+
+            # 计算膨胀率
+            src_size = os.path.getsize(self.selected_file)
+            dst_size = os.path.getsize(dst_path)
+            ratio = dst_size / src_size if src_size > 0 else 0
+
+            self.file_status = f"✓ 完成！输出: {dst_filename}"
+            self.progress_value = 1
+            self.file_progress = f"膨胀率: {ratio:.2f}x ({src_size} → {dst_size} bytes)"
+
+            # 刷新文件列表
+            self.get_rsa_file_list()
+
+        except Exception as e:
+            self.file_status = f"✗ 加密失败: {str(e)}"
+            self.progress_value = 0
+
+    @slint.callback
+    def decrypt_file(self):
+        """解密文件"""
+        if not self.selected_cipher:
+            self.file_status = "请先选择加密文件"
+            return
+
+        try:
+            # 验证文件格式
+            metadata = RSA_plain.validate_rsaf_file(self.selected_cipher)
+            if metadata is None:
+                self.file_status = "✗ 无效的 RSAF 文件格式"
+                return
+
+            # 生成输出路径（使用原始文件名）
+            output_dir = os.path.join(self.app_dir, "decrypted")
+            os.makedirs(output_dir, exist_ok=True)
+            dst_path = os.path.join(output_dir, metadata["filename"])
+
+            # 检查文件是否已存在
+            if os.path.exists(dst_path):
+                if not messagebox.askyesno("File exists", f"Overwrite {dst_path}?"):
+                    self.file_status = "已取消"
+                    return
+
+            # 执行解密
+            self.progress_value = 0
+            self.file_status = "解密中..."
+            result = self.rsa.decrypt_file(self.selected_cipher, dst_path,
+                                           self._progress_callback)
+
+            self.file_status = f"✓ 完成！保存为: {result['filename']}"
+            self.progress_value = 1
+            self.file_progress = f"文件大小: {result['size']} bytes"
+
+        except Exception as e:
+            self.file_status = f"✗ 解密失败: {str(e)}"
+            self.progress_value = 0
 
 
 if __name__ == "__main__":
