@@ -12,3 +12,5 @@ wheels/
 *.bin
 *.pem
 *.spec
+ciphertexts/
+decrypted/
