@@ -1,16 +1,20 @@
-import { Button, VerticalBox, HorizontalBox, TextEdit, GroupBox } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, TextEdit, GroupBox, StandardListView } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
     in-out property<string> plaintext: "";
     in-out property<string> ciphertext: "";
     in-out property<string> status: "生成密钥后开始使用";
     in-out property<bool> has-keys: false;
+    in-out property<[StandardListViewItem]> ciphertext-items: [];
 
     callback generate-keys();
     callback encrypt-text(string);
     callback decrypt-text(string);
     callback save-keys();
     callback load-keys();
+    callback save-ciphertext-bin();
+    callback get-ciphertext-list();
+    callback load-ciphertext-file(string);
 
     VerticalBox {
         padding: 15px;
@@ -71,10 +75,34 @@ export component AppWindow inherits Window {
                 enabled: has-keys && plaintext != "";
             }
             Button {
+                text: "保存密文";
+                clicked => { root.save-ciphertext-bin(); }
+            }
+            Button {
+                text: "刷新列表";
+                clicked => { root.get-ciphertext-list(); }
+            }
+            Button {
+                text: "加载密文";
+                clicked => {
+                    root.load-ciphertext-file(root.ciphertext-items[root.ciphertext-items.length - 1].text);
+                }
+                enabled: has-keys && ciphertext-items.length > 0;
+            }
+            Button {
                 text: "< 解密";
                 clicked => { root.decrypt-text(root.ciphertext); }
                 enabled: has-keys && ciphertext != "";
             }
+        }
+
+        // 密文文件列表
+        Text {
+            text: "已保存的密文文件:";
+        }
+        StandardListView {
+            model: ciphertext-items;
+            height: 100px;
         }
     }
 }

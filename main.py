@@ -25,6 +25,7 @@ class App(slint.loader.app_window.AppWindow):
         try:
             ciphertext = self.rsa.encrypt(plaintext.encode("utf-8"))
             self.ciphertext = base64.b64encode(ciphertext).decode("ascii")
+            self.current_ciphertext = ciphertext  # 保存原始 bytes
             self.status = "加密成功"
         except Exception as e:
             self.status = f"加密失败: {str(e)}"
@@ -38,6 +39,20 @@ class App(slint.loader.app_window.AppWindow):
             self.status = "解密成功"
         except Exception as e:
             self.status = f"解密失败: {str(e)}"
+
+    @slint.callback
+    def save_ciphertext_bin(self):
+        """将密文保存为二进制文件，文件名用 Hex 前20位"""
+        try:
+            if not hasattr(self, 'current_ciphertext') or self.current_ciphertext is None:
+                self.status = "无密文可保存"
+                return
+            ciphertext_dir = os.path.join(self.app_dir, "ciphertexts")
+            os.makedirs(ciphertext_dir, exist_ok=True)
+            filename = RSA_plain.save_ciphertext(self.current_ciphertext, ciphertext_dir)
+            self.status = f"密文已保存: {filename}"
+        except Exception as e:
+            self.status = f"保存失败: {str(e)}"
 
     @slint.callback
     def save_keys(self):
@@ -65,6 +80,26 @@ class App(slint.loader.app_window.AppWindow):
                 self.status = "公钥已加载 (仅加密模式)"
             except FileNotFoundError:
                 self.status = "未找到密钥文件"
+        except Exception as e:
+            self.status = f"加载失败: {str(e)}"
+
+    @slint.callback
+    def get_ciphertext_list(self):
+        """获取密文文件列表"""
+        ciphertext_dir = os.path.join(self.app_dir, "ciphertexts")
+        files = RSA_plain.list_ciphertext_files(ciphertext_dir)
+        # 使用 Slint ListModel
+        self.ciphertext_items = slint.ListModel([{"text": f} for f in files])
+
+    @slint.callback
+    def load_ciphertext_file(self, filename: str):
+        """加载密文文件"""
+        try:
+            filepath = os.path.join(self.app_dir, "ciphertexts", filename)
+            ciphertext = RSA_plain.load_ciphertext(filepath)
+            self.ciphertext = base64.b64encode(ciphertext).decode("ascii")
+            self.current_ciphertext = ciphertext
+            self.status = f"已加载: {filename}"
         except Exception as e:
             self.status = f"加载失败: {str(e)}"
 
