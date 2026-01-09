@@ -59,12 +59,12 @@ class RSA_plain:
         """保存私钥到文件"""
         if self._private_key is None:
             raise ValueError("Keys not generated. Call generate_keys() first.")
-        encoding = serialization.BestAvailableEncryption(password) if password else serialization.NoEncryption()
+        encryption = serialization.BestAvailableEncryption(password) if password else serialization.NoEncryption()
         with open(path, "wb") as f:
             f.write(self.private_key.private_bytes(
-                encoding=encoding,
+                encoding=serialization.Encoding.PEM,
                 format=serialization.PrivateFormat.PKCS8,
-                encryption_algorithm=encoding
+                encryption_algorithm=encryption
             ))
 
     def save_public_key(self, path: str):
@@ -91,3 +91,25 @@ class RSA_plain:
             self._public_key = serialization.load_pem_public_key(
                 f.read(), backend=default_backend()
             )
+
+    @staticmethod
+    def save_ciphertext(ciphertext: bytes, dir_path: str) -> str:
+        """保存密文到二进制文件，返回文件名（Hex前20位）"""
+        filename = ciphertext[:10].hex() + ".bin"
+        filepath = os.path.join(dir_path, filename)
+        with open(filepath, "wb") as f:
+            f.write(ciphertext)
+        return filename
+
+    @staticmethod
+    def load_ciphertext(filepath: str) -> bytes:
+        """从文件加载密文"""
+        with open(filepath, "rb") as f:
+            return f.read()
+
+    @staticmethod
+    def list_ciphertext_files(dir_path: str) -> list[str]:
+        """列出目录下的所有 .bin 密文文件"""
+        if not os.path.exists(dir_path):
+            return []
+        return [f for f in os.listdir(dir_path) if f.endswith(".bin")]
