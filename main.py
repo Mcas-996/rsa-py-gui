@@ -2,6 +2,7 @@ import slint
 from rsaa import RSA_plain
 import base64
 import os
+from datetime import timedelta
 
 
 # slint.loader will look in `sys.path` for `app-window.slint`.
@@ -10,6 +11,12 @@ class App(slint.loader.app_window.AppWindow):
         super().__init__()
         self.rsa = RSA_plain()
         self.app_dir = os.path.dirname(os.path.abspath(__file__))
+        # 实时预览轮询相关
+        self._last_plaintext = ""
+        self.preview_status = ""
+        # 启动轮询 Timer (500ms间隔)
+        self._preview_timer = slint.Timer()
+        self._preview_timer.start(slint.TimerMode.Repeated, timedelta(seconds=0.5), lambda: self._poll_preview())
 
     @slint.callback
     def generate_keys(self):
@@ -102,6 +109,34 @@ class App(slint.loader.app_window.AppWindow):
             self.status = f"Loaded: {filename}"
         except Exception as e:
             self.status = f"Load failed: {str(e)}"
+
+    def _poll_preview(self):
+        """轮询检测文本变化，触发预览加密"""
+        current_text = self.plaintext
+        # 只有文本真正变化时才加密
+        if current_text != self._last_plaintext:
+            self._last_plaintext = current_text
+            self._do_preview(current_text)
+
+    def _do_preview(self, text: str):
+        """实际执行预览加密"""
+        if not self.has_keys:
+            if text:  # 只有输入了文本才显示错误
+                self.preview_status = "错误：无密钥，请先生成或加载密钥"
+            else:
+                self.preview_status = ""
+            return
+
+        if not text:
+            self.preview_status = ""
+            return
+
+        try:
+            ciphertext = self.rsa.encrypt(text.encode("utf-8"))
+            self.ciphertext = base64.b64encode(ciphertext).decode("ascii")
+            self.preview_status = "✓ 预览已更新"
+        except Exception as e:
+            self.preview_status = f"加密错误：{str(e)}"
 
 
 if __name__ == "__main__":

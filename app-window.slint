@@ -4,6 +4,7 @@ export component AppWindow inherits Window {
     in-out property<string> plaintext: "";
     in-out property<string> ciphertext: "";
     in-out property<string> status: "Generate keys to start";
+    in-out property<string> preview-status: "";
     in-out property<bool> has-keys: false;
     in-out property<[StandardListViewItem]> ciphertext-items: [];
 
@@ -63,6 +64,20 @@ export component AppWindow inherits Window {
                     placeholder-text: "Enter Base64 ciphertext to decrypt";
                     wrap: word-wrap;
                 }
+            }
+        }
+
+        // Preview status hint
+        HorizontalBox {
+            spacing: 10px;
+            Text {
+                text: "Preview:";
+                font-weight: 700;
+            }
+            Text {
+                text: root.preview-status;
+                color: root.preview-status != "" ? #2e7d32 : #666666;
+                font-size: 12px;
             }
         }
 
