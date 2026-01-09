@@ -112,6 +112,10 @@ class App(slint.loader.app_window.AppWindow):
 
     def _poll_preview(self):
         """轮询检测文本变化，触发预览加密"""
+        # 只有启用预览时才执行
+        if not self.preview_enabled:
+            return
+
         current_text = self.plaintext
         # 只有文本真正变化时才加密
         if current_text != self._last_plaintext:
