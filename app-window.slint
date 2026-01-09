@@ -1,16 +1,77 @@
-import { Button, VerticalBox } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, TextEdit, LineEdit, GroupBox } from "std-widgets.slint";
 
 export component AppWindow inherits Window {
-    in-out property<int> counter: 42;
-    callback request-increase-value();
+    in-out property<string> plaintext: "";
+    in-out property<string> ciphertext: "";
+    in-out property<string> status: "生成密钥后开始使用";
+    in-out property<bool> has-keys: false;
+
+    callback generate-keys();
+    callback encrypt-text(string);
+    callback decrypt-text(string);
+    callback save-keys();
+    callback load-keys();
+
     VerticalBox {
+        padding: 15px;
+        spacing: 10px;
+
+        // 状态栏
         Text {
-            text: "Counter: \{root.counter}";
+            text: status;
+            color: has-keys ? #2e7d32 : #c62828;
+            horizontal-alignment: center;
         }
-        Button {
-            text: "Increase value";
-            clicked => {
-                root.request-increase-value();
+
+        // 密钥管理按钮
+        HorizontalBox {
+            spacing: 10px;
+            Button {
+                text: "生成密钥";
+                clicked => { root.generate-keys(); }
+            }
+            Button {
+                text: "保存密钥";
+                clicked => { root.save-keys(); }
+                enabled: has-keys;
+            }
+            Button {
+                text: "加载密钥";
+                clicked => { root.load-keys(); }
+            }
+        }
+
+        // 明文和密文输入框并排
+        HorizontalBox {
+            spacing: 10px;
+            GroupBox {
+                title: "明文";
+                LineEdit {
+                    text <=> root.plaintext;
+                    placeholder-text: "输入要加密的文本";
+                }
+            }
+            GroupBox {
+                title: "密文 (Base64)";
+                LineEdit {
+                    text <=> root.ciphertext;
+                    placeholder-text: "输入要解密的 Base64 密文";
+                }
+            }
+        }
+
+        // 操作按钮
+        HorizontalBox {
+            spacing: 10px;
+            Button {
+                text: "加密 >";
+                clicked => { root.encrypt-text(root.plaintext); }
+                enabled: has-keys && plaintext != "";
+            }
+            Button {
+                text: "< 解密";
+                clicked => { root.decrypt-text(root.ciphertext); }
+                enabled: has-keys && ciphertext != "";
             }
         }
     }
