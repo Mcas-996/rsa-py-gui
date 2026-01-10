@@ -10,4 +10,5 @@ wheels/
 *.bin
 *.pem
 *.spec
+*.exe
 test/
