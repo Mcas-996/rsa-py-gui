@@ -2,9 +2,9 @@ import slint
 from rsaa import RSA_plain
 import base64
 import os
+import subprocess
+import platform
 from datetime import timedelta
-import tkinter as tk
-from tkinter import filedialog, messagebox
 
 
 # Localized strings
@@ -90,7 +90,72 @@ STRINGS = {
 }
 
 
-# slint.loader will look in `sys.path` for `app-window.slint`.
+# Native file dialog functions for macOS
+def askopenfilename(title: str = "", initialdir: str = "", filetypes: list[tuple[str, str]] = None) -> str:
+    """Native macOS file selection dialog"""
+    if platform.system() != "Darwin":
+        return ""  # Fallback for non-macOS
+
+    ft_str = ""
+    if filetypes:
+        ft_parts = []
+        for desc, pattern in filetypes:
+            ft_parts.append(f"\"{pattern}\"")
+        ft_str = "of type {" + ", ".join(ft_parts) + "}"
+
+    script = f'''
+tell application "System Events"
+    activate
+    set theFile to choose file {ft_str} with prompt "{title}"
+    return POSIX path of theFile
+end tell
+'''
+    try:
+        result = subprocess.run(["osascript", "-e", script],
+                               capture_output=True, text=True, timeout=30)
+        path = result.stdout.strip()
+        return path if path and not result.stderr else ""
+    except Exception:
+        return ""
+
+def askdirectory(title: str = "", initialdir: str = "") -> str:
+    """Native macOS directory selection dialog"""
+    if platform.system() != "Darwin":
+        return ""  # Fallback for non-macOS
+
+    script = f'''
+tell application "System Events"
+    activate
+    set theFolder to choose folder with prompt "{title}"
+    return POSIX path of theFolder
+end tell
+'''
+    try:
+        result = subprocess.run(["osascript", "-e", script],
+                               capture_output=True, text=True, timeout=30)
+        path = result.stdout.strip()
+        return path if path and not result.stderr else ""
+    except Exception:
+        return ""
+
+def askyesno(title: str, message: str) -> bool:
+    """Native macOS yes/no dialog"""
+    if platform.system() != "Darwin":
+        return False  # Fallback for non-macOS
+
+    script = f'''
+tell application "System Events"
+    activate
+    set theAnswer to button returned of (display dialog "{message}" with title "{title}" buttons {{"No", "Yes"}} default button "Yes")
+    return theAnswer
+end tell
+'''
+    try:
+        result = subprocess.run(["osascript", "-e", script],
+                               capture_output=True, text=True, timeout=30)
+        return "Yes" in result.stdout.strip()
+    except Exception:
+        return False
 class App(slint.loader.app_window.AppWindow):
     def __init__(self):
         super().__init__()
@@ -103,9 +168,7 @@ class App(slint.loader.app_window.AppWindow):
         # Load work directory from settings
         self._settings_file = os.path.join(self.app_dir, ".rsa_gui_settings")
         self._load_settings()
-        # Hide tkinter window for file dialogs
-        self._tk_root = tk.Tk()
-        self._tk_root.withdraw()
+
         # Start polling timer (500ms interval)
         self._preview_timer = slint.Timer()
         self._preview_timer.start(slint.TimerMode.Repeated, timedelta(seconds=0.5), lambda: self._poll_preview())
@@ -145,9 +208,8 @@ class App(slint.loader.app_window.AppWindow):
     @slint.callback
     def select_work_dir(self):
         """Select work directory"""
-        directory = filedialog.askdirectory(
+        directory = askdirectory(
             title=self._("select-workdir"),
-            parent=self._tk_root,
             initialdir=self.work_dir,
         )
         if directory:
@@ -289,9 +351,9 @@ class App(slint.loader.app_window.AppWindow):
     @slint.callback
     def select_source_file(self):
         """Select source file to encrypt"""
-        filepath = filedialog.askopenfilename(
+        filepath = askopenfilename(
             title=self._("select-file"),
-            parent=self._tk_root,
+            initialdir=self.work_dir,
         )
         if filepath:
             self.selected_file = filepath
@@ -310,9 +372,8 @@ class App(slint.loader.app_window.AppWindow):
     def select_cipher_file(self):
         """Select encrypted file to decrypt"""
         rsa_dir = self._get_work_subdir("ciphertexts")
-        filepath = filedialog.askopenfilename(
+        filepath = askopenfilename(
             title=self._("select-cipher"),
-            parent=self._tk_root,
             initialdir=rsa_dir,
             filetypes=[("RSA encrypted files", "*.rsa"), ("All files", "*.*")],
         )
@@ -392,7 +453,7 @@ class App(slint.loader.app_window.AppWindow):
             dst_path = os.path.join(output_dir, metadata["filename"])
 
             if os.path.exists(dst_path):
-                if not messagebox.askyesno("File exists", self._("overwrite") + dst_path + "?"):
+                if not askyesno("File exists", self._("overwrite") + dst_path + "?"):
                     self.file_status = self._("cancelled")
                     return
 
