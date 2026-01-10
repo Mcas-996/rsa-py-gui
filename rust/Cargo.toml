@@ -1,44 +1,12 @@
 [package]
-name = "rsa_gui"
+name = "slint-rust-template"
 version = "0.1.0"
 edition = "2021"
-description = "RSA Encryption/Decryption GUI Application with Assembly Acceleration"
-authors = ["User"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# Slint GUI framework
-slint = "1.8"
-
-# Big Integer libraries for RSA
-num-traits = "0.2"
-num-integer = "0.1"
-num-bigint = { version = "0.4", features = ["std", "rand"] }
-
-# Random number generation
-rand = "0.8"
-
-# File operations
-anyhow = "1.0"
-thiserror = "1.0"
-
-# Hex encoding for display
-hex = "0.4"
-
-# Platform-specific assembly handling
-cc = { version = "1.0", optional = true }
+slint = "1.14.1"
 
 [build-dependencies]
-
-[features]
-# Enable assembly acceleration (default)
-asm-accel = ["dep:cc"]
-
-# Disable assembly for platforms without NASM support
-default = ["asm-accel"]
-
-[profile.release]
-# Optimize for speed
-opt-level = 3
-lto = true
+slint-build = "1.14.1"
