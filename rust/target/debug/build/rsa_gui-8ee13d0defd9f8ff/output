@@ -1,0 +1,6 @@
+Target: x86_64-pc-windows-gnu
+OUT_DIR: "D:\\allens\\code\\repositories\\RSA_GUI\\rust\\target\\debug\\build\\rsa_gui-8ee13d0defd9f8ff\\out"
+Compiling src/assembly/mul_asm_x64.asm -> "D:\\allens\\code\\repositories\\RSA_GUI\\rust\\target\\debug\\build\\rsa_gui-8ee13d0defd9f8ff\\out\\mul_asm_x64.o" (format: win64)
+Warning: Could not run nasm: program not found
+Assembly acceleration will be disabled
+cargo:rerun-if-changed=src/assembly/mul_asm_x64.asm

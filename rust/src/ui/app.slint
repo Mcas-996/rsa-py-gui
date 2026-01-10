@@ -1,0 +1,391 @@
+// RSA GUI Application - Slint UI Definition
+// Main application window with tabs for different operations
+
+component AppWindow inherits Window {
+    title: "RSA Encryption/Decryption Tool";
+    width: 800px;
+    height: 600px;
+    min-width: 600px;
+    min-height: 400px;
+
+    // Application state
+    in-out property <string> status_message: "Ready";
+    in-out property <bool> is_processing: false;
+    in-out property <float> progress_value: 0.0;
+    in-out property <string> current_operation: "";
+
+    // Key information
+    in-out property <string> public_key_n: "";
+    in-out property <string> public_key_e: "";
+    in-out property <string> private_key_d: "";
+    in-out property <string> key_bit_length: "2048";
+    in-out property <bool> keys_generated: false;
+
+    // File paths
+    in-out property <string> input_file_path: "";
+    in-out property <string> output_file_path: "";
+    in-out property <string> key_file_path: "";
+
+    // Text encryption
+    in-out property <string> input_text: "";
+    in-out property <string> output_text: "";
+
+    // Vertical layout for the main window
+    VerticalLayout {
+        padding: 10px;
+        spacing: 10px;
+
+        // Header
+        Rectangle {
+            height: 50px;
+            background: #4a90d9;
+
+            Text {
+                text: "RSA Encryption/Decryption Tool";
+                font-size: 24px;
+                color: white;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+
+        // Tab controller
+        TabWidget {
+            tabs: [
+                Tab { title: "Key Generation", content: keygen_panel; },
+                Tab { title: "Text Encryption", content: text_panel; },
+                Tab { title: "File Encryption", content: file_panel; },
+                Tab { title: "Key Management", content: key_panel; },
+            ];
+
+            // Key Generation Panel
+            component KeygenPanel inherits Rectangle {
+                VerticalLayout {
+                    padding: 20px;
+                    spacing: 15px;
+
+                    Text {
+                        text: "Generate RSA Key Pair";
+                        font-size: 18px;
+                        font-weight: bold;
+                    }
+
+                    // Bit length selection
+                    HorizontalLayout {
+                        spacing: 10px;
+
+                        Text {
+                            text: "Key Bit Length:";
+                            vertical-alignment: center;
+                        }
+
+                        ComboBox {
+                            current-value: "2048";
+                            model: ["1024", "2048", "3072", "4096"];
+                            enabled: !root.keys_generated;
+                        }
+
+                        Text {
+                            text: "(Higher = more secure but slower)";
+                            font-size: 12px;
+                            color: #666;
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    // Generate button
+                    Button {
+                        text: "Generate New Key Pair";
+                        primary: true;
+                        enabled: !root.is_processing;
+
+                        clicked => {
+                            root.generate_keys();
+                        }
+                    }
+
+                    // Status display
+                    Rectangle {
+                        height: 100px;
+                        background: #f0f0f0;
+                        border-radius: 5px;
+
+                        TextInput {
+                            text: "Public Key (n): " + root.public_key_n + "\n" +
+                                  "Public Key (e): " + root.public_key_e + "\n" +
+                                  "Private Key (d): " + (root.keys_generated ? "[Generated]" : "[Not Generated]");
+                            multi-line: true;
+                            read-only: true;
+                            font-size: 12px;
+                            wrap: word-wrap;
+                        }
+                    }
+
+                    // Save keys button
+                    Button {
+                        text: "Save Keys to File";
+                        enabled: root.keys_generated && !root.is_processing;
+
+                        clicked => {
+                            root.save_keys();
+                        }
+                    }
+                }
+            }
+
+            // Text Encryption Panel
+            component TextPanel inherits Rectangle {
+                VerticalLayout {
+                    padding: 20px;
+                    spacing: 15px;
+
+                    Text {
+                        text: "Encrypt/Decrypt Text";
+                        font-size: 18px;
+                        font-weight: bold;
+                    }
+
+                    // Input text
+                    Text {
+                        text: "Input Text:";
+                    }
+
+                    TextInput {
+                        text: root.input_text;
+                        multi-line: true;
+                        height: 80px;
+                        placeholder-text: "Enter text to encrypt or decrypt...";
+                    }
+
+                    // Operation buttons
+                    HorizontalLayout {
+                        spacing: 10px;
+
+                        Button {
+                            text: "Encrypt";
+                            primary: true;
+                            enabled: root.keys_generated && !root.is_processing;
+
+                            clicked => {
+                                root.encrypt_text();
+                            }
+                        }
+
+                        Button {
+                            text: "Decrypt";
+                            enabled: root.keys_generated && !root.is_processing;
+
+                            clicked => {
+                                root.decrypt_text();
+                            }
+                        }
+                    }
+
+                    // Output text
+                    Text {
+                        text: "Output Text:";
+                    }
+
+                    TextInput {
+                        text: root.output_text;
+                        multi-line: true;
+                        height: 80px;
+                        read-only: true;
+                        placeholder-text: "Result will appear here...";
+                    }
+
+                    // Clear button
+                    Button {
+                        text: "Clear";
+                        enabled: !root.is_processing;
+
+                        clicked => {
+                            root.clear_text();
+                        }
+                    }
+                }
+            }
+
+            // File Encryption Panel
+            component FilePanel inherits Rectangle {
+                VerticalLayout {
+                    padding: 20px;
+                    spacing: 15px;
+
+                    Text {
+                        text: "Encrypt/Decrypt Files";
+                        font-size: 18px;
+                        font-weight: bold;
+                    }
+
+                    // Input file selection
+                    HorizontalLayout {
+                        spacing: 10px;
+
+                        TextInput {
+                            text: root.input_file_path;
+                            placeholder-text: "Select input file...";
+                            read-only: true;
+                            height: 30px;
+                            flex: 1;
+                        }
+
+                        Button {
+                            text: "Browse...";
+                            enabled: !root.is_processing;
+
+                            clicked => {
+                                root.select_input_file();
+                            }
+                        }
+                    }
+
+                    // Output file selection
+                    HorizontalLayout {
+                        spacing: 10px;
+
+                        TextInput {
+                            text: root.output_file_path;
+                            placeholder-text: "Select output file...";
+                            read-only: true;
+                            height: 30px;
+                            flex: 1;
+                        }
+
+                        Button {
+                            text: "Browse...";
+                            enabled: !root.is_processing;
+
+                            clicked => {
+                                root.select_output_file();
+                            }
+                        }
+                    }
+
+                    // Operation buttons
+                    HorizontalLayout {
+                        spacing: 10px;
+
+                        Button {
+                            text: "Encrypt File";
+                            primary: true;
+                            enabled: root.keys_generated && !root.is_processing;
+
+                            clicked => {
+                                root.encrypt_file();
+                            }
+                        }
+
+                        Button {
+                            text: "Decrypt File";
+                            enabled: root.keys_generated && !root.is_processing;
+
+                            clicked => {
+                                root.decrypt_file();
+                            }
+                        }
+                    }
+
+                    // Progress bar
+                    Rectangle {
+                        height: 30px;
+                        background: #e0e0e0;
+                        border-radius: 5px;
+
+                        Rectangle {
+                            height: 100%;
+                            width: root.progress_value * 100%;
+                            background: #4a90d9;
+                            border-radius: 5px;
+
+                            Text {
+                                text: root.current_operation + " " + floor(root.progress_value * 100) + "%";
+                                color: white;
+                                font-size: 12px;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Key Management Panel
+            component KeyPanel inherits Rectangle {
+                VerticalLayout {
+                    padding: 20px;
+                    spacing: 15px;
+
+                    Text {
+                        text: "Key Management";
+                        font-size: 18px;
+                        font-weight: bold;
+                    }
+
+                    // Load public key
+                    HorizontalLayout {
+                        spacing: 10px;
+
+                        TextInput {
+                            text: root.key_file_path;
+                            placeholder-text: "Select key file...";
+                            read-only: true;
+                            height: 30px;
+                            flex: 1;
+                        }
+
+                        Button {
+                            text: "Load Keys";
+                            enabled: !root.is_processing;
+
+                            clicked => {
+                                root.load_keys();
+                            }
+                        }
+                    }
+
+                    // Key information display
+                    Rectangle {
+                        height: 150px;
+                        background: #f0f0f0;
+                        border-radius: 5px;
+
+                        Text {
+                            text: "Key Information:\n" +
+                                  "Bit Length: " + root.key_bit_length + "\n" +
+                                  "Status: " + (root.keys_generated ? "Keys Loaded" : "No Keys") + "\n" +
+                                  "Assembly Acceleration: " + (root.asm_available ? "Enabled" : "Disabled");
+                            multi-line: true;
+                            font-size: 14px;
+                        }
+                    }
+
+                    // Clear keys
+                    Button {
+                        text: "Clear Keys";
+                        enabled: root.keys_generated && !root.is_processing;
+
+                        clicked => {
+                            root.clear_keys();
+                        }
+                    }
+                }
+            }
+        }
+
+        // Status bar
+        Rectangle {
+            height: 30px;
+            background: #333;
+
+            Text {
+                text: root.status_message;
+                color: white;
+                font-size: 12px;
+                horizontal-alignment: left;
+                vertical-alignment: center;
+                padding-left: 10px;
+            }
+        }
+    }
+}

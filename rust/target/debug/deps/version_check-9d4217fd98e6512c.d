@@ -1,0 +1,10 @@
+D:\allens\code\repositories\RSA_GUI\rust\target\debug\deps\version_check-9d4217fd98e6512c.d: C:\Users\Allen\ Wang\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\version_check-0.9.5\src\lib.rs C:\Users\Allen\ Wang\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\version_check-0.9.5\src\version.rs C:\Users\Allen\ Wang\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\version_check-0.9.5\src\channel.rs C:\Users\Allen\ Wang\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\version_check-0.9.5\src\date.rs
+
+D:\allens\code\repositories\RSA_GUI\rust\target\debug\deps\libversion_check-9d4217fd98e6512c.rlib: C:\Users\Allen\ Wang\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\version_check-0.9.5\src\lib.rs C:\Users\Allen\ Wang\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\version_check-0.9.5\src\version.rs C:\Users\Allen\ Wang\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\version_check-0.9.5\src\channel.rs C:\Users\Allen\ Wang\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\version_check-0.9.5\src\date.rs
+
+D:\allens\code\repositories\RSA_GUI\rust\target\debug\deps\libversion_check-9d4217fd98e6512c.rmeta: C:\Users\Allen\ Wang\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\version_check-0.9.5\src\lib.rs C:\Users\Allen\ Wang\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\version_check-0.9.5\src\version.rs C:\Users\Allen\ Wang\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\version_check-0.9.5\src\channel.rs C:\Users\Allen\ Wang\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\version_check-0.9.5\src\date.rs
+
+C:\Users\Allen\ Wang\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\version_check-0.9.5\src\lib.rs:
+C:\Users\Allen\ Wang\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\version_check-0.9.5\src\version.rs:
+C:\Users\Allen\ Wang\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\version_check-0.9.5\src\channel.rs:
+C:\Users\Allen\ Wang\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\version_check-0.9.5\src\date.rs:
