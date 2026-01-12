@@ -1,49 +1,188 @@
-# This file is a template, and might need editing before it works on your project.
-# This is a sample GitLab CI/CD configuration file that should run without any modifications.
-# It demonstrates a basic 3 stage CI/CD pipeline. Instead of real tests or scripts,
-# it uses echo commands to simulate the pipeline execution.
-#
-# A pipeline is composed of independent jobs that run scripts, grouped into stages.
-# Stages run in sequential order, but jobs within stages run in parallel.
-#
-# For more information, see: https://docs.gitlab.com/ee/ci/yaml/#stages
-#
-# You can copy and paste this template into a new `.gitlab-ci.yml` file.
-# You should not add this template to an existing `.gitlab-ci.yml` file by using the `include:` keyword.
-#
-# To contribute improvements to CI/CD templates, please follow the Development guide at:
-# https://docs.gitlab.com/development/cicd/templates/
-# This specific template is located at:
-# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Getting-Started.gitlab-ci.yml
+# GitLab CI/CD configuration for RSA GUI (Rust version)
+# Supports multi-platform compilation: Linux, macOS, Windows
 
-stages:          # List of stages for jobs, and their order of execution
+stages:
   - build
   - test
+  - package
   - deploy
 
-build-job:       # This job runs in the build stage, which runs first.
+variables:
+  CARGO_HOME: "$CI_PROJECT_DIR/.cargo"
+  RUSTFLAGS: "-C embed-bitcode=no"
+
+# Cache configuration
+cache:
+  key: ${CI_JOB_NAME}
+  paths:
+    - .cargo/
+    - target/
+
+# Build matrix for three platforms
+.build_template: &build_template
   stage: build
+  before_script:
+    - rustc --version
+    - cargo --version
   script:
-    - echo "Compiling the code..."
-    - echo "Compile complete."
+    - cargo build --release --target ${TARGET}
+  artifacts:
+    paths:
+      - target/${TARGET}/release/rsa-gui*
+    expire_in: 1 week
 
-unit-test-job:   # This job runs in the test stage.
-  stage: test    # It only starts when the job in the build stage completes successfully.
-  script:
-    - echo "Running unit tests... This will take about 60 seconds."
-    - sleep 60
-    - echo "Code coverage is 90%"
+# Linux build
+build:linux:
+  <<: *build_template
+  image: rust:1.75
+  variables:
+    TARGET: x86_64-unknown-linux-gnu
+  allow_failure: false
 
-lint-test-job:   # This job also runs in the test stage.
-  stage: test    # It can run at the same time as unit-test-job (in parallel).
-  script:
-    - echo "Linting code... This will take about 10 seconds."
-    - sleep 10
-    - echo "No lint issues found."
+# macOS build
+build:macos:
+  <<: *build_template
+  tags:
+    - macos
+  variables:
+    TARGET: x86_64-apple-darwin
+  allow_failure: false
 
-deploy-job:      # This job runs in the deploy stage.
-  stage: deploy  # It only runs when *both* jobs in the test stage complete successfully.
-  environment: production
+# Windows build
+build:windows:
+  <<: *build_template
+  tags:
+    - windows
+  variables:
+    TARGET: x86_64-pc-windows-msvc
+  allow_failure: false
+
+# Unit tests
+test:linux:
+  stage: test
+  image: rust:1.75
+  variables:
+    TARGET: x86_64-unknown-linux-gnu
   script:
-    - echo "Deploying application..."
-    - echo "Application successfully deployed."
+    - cargo test --target ${TARGET}
+  allow_failure: false
+
+test:macos:
+  stage: test
+  tags:
+    - macos
+  variables:
+    TARGET: x86_64-apple-darwin
+  script:
+    - cargo test --target ${TARGET}
+  allow_failure: false
+
+test:windows:
+  stage: test
+  tags:
+    - windows
+  variables:
+    TARGET: x86_64-pc-windows-msvc
+  script:
+    - cargo test --target ${TARGET}
+  allow_failure: false
+
+# Code formatting check
+lint:check:
+  stage: test
+  image: rust:1.75
+  script:
+    - rustup component add rustfmt
+    - cargo fmt --check
+  allow_failure: false
+
+# Clippy linting
+lint:clippy:
+  stage: test
+  image: rust:1.75
+  variables:
+    TARGET: x86_64-unknown-linux-gnu
+  script:
+    - rustup component add clippy
+    - cargo clippy --target ${TARGET} --all-features -- -D warnings
+  allow_failure: false
+
+# Security audit
+audit:security:
+  stage: test
+  image: rust:1.75
+  script:
+    - cargo install cargo-audit || true
+    - cargo audit
+  allow_failure: true
+
+# Create release packages
+package:linux:
+  stage: package
+  image: rust:1.75
+  variables:
+    TARGET: x86_64-unknown-linux-gnu
+  dependencies:
+    - build:linux
+  script:
+    - mkdir -p release/${TARGET}
+    - cp target/${TARGET}/release/rsa-gui release/${TARGET}/
+    - cd release && tar -czf rsa-gui-linux-x86_64.tar.gz ${TARGET}
+    - mv release/rsa-gui-linux-x86_64.tar.gz .
+  artifacts:
+    paths:
+      - rsa-gui-linux-x86_64.tar.gz
+    expire_in: 1 month
+  allow_failure: false
+
+package:macos:
+  stage: package
+  tags:
+    - macos
+  variables:
+    TARGET: x86_64-apple-darwin
+  dependencies:
+    - build:macos
+  script:
+    - mkdir -p release/${TARGET}
+    - cp target/${TARGET}/release/rsa-gui release/${TARGET}/
+    - cd release && tar -czf rsa-gui-macos-x86_64.tar.gz ${TARGET}
+    - mv release/rsa-gui-macos-x86_64.tar.gz .
+  artifacts:
+    paths:
+      - rsa-gui-macos-x86_64.tar.gz
+    expire_in: 1 month
+  allow_failure: false
+
+package:windows:
+  stage: package
+  tags:
+    - windows
+  variables:
+    TARGET: x86_64-pc-windows-msvc
+  dependencies:
+    - build:windows
+  script:
+    - mkdir -p release/${TARGET}
+    - cp target/${TARGET}/release/rsa-gui.exe release/${TARGET}/
+    - cd release && tar -czf rsa-gui-windows-x86_64.tar.gz ${TARGET}
+    - mv release/rsa-gui-windows-x86_64.tar.gz .
+  artifacts:
+    paths:
+      - rsa-gui-windows-x86_64.tar.gz
+    expire_in: 1 month
+  allow_failure: false
+
+# Deploy to GitLab releases (optional)
+deploy:release:
+  stage: deploy
+  dependencies:
+    - package:linux
+    - package:macos
+    - package:windows
+  script:
+    - echo "Deploying to GitLab releases..."
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: manual
+  allow_failure: true
