@@ -1,34 +1,37 @@
 version: 2.1
 
 executors:
-  rust-linux-arm:
+  rust-linux:
     docker:
-      - image: messari/linux_arm64:rust-latest
+      - image: cimg/rust:1.75
     working_directory: ~/repo
 
   rust-macos-arm:
     macos:
       xcode: "15.0.0"
+    resource_class: macos.m1.pro.large
     environment:
-      - TARGET: aarch64-apple-darwin
       - RUSTUP_HOME: /Users/distiller/.rustup
       - CARGO_HOME: /Users/distiller/.cargo
     working_directory: ~/repo
 
   rust-windows:
     machine:
-      image: windows-server-2022-vs2022:current
+      image: windows-server-2019-vs2019:current
+    resource_class: large
     working_directory: C:/project
 
 jobs:
   build-linux-arm:
-    executor: rust-linux-arm
+    executor: rust-linux
     steps:
       - checkout
       - run:
-          name: Rust setup
+          name: Install ARM cross-compilation tools
           command: |
-            rustup default stable
+            sudo apt-get update
+            sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+            sudo apt-get install -y libssl-dev:arm64 pkg-config-aarch64-linux-gnu
             rustup target add aarch64-unknown-linux-gnu
       - run:
           name: Build for Linux ARM64
