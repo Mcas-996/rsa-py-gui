@@ -9,16 +9,17 @@ executors:
   rust-macos-arm:
     macos:
       xcode: "15.0.0"
-    resource_class: macos.m1.pro.large
-    environment:
-      - RUSTUP_HOME: /Users/distiller/.rustup
-      - CARGO_HOME: /Users/distiller/.cargo
+    # 修复：使用更新的 M-系列资源类 (m1 已逐步下线)
+    resource_class: macos.m2pro.medium
     working_directory: ~/repo
 
   rust-windows:
     machine:
-      image: windows-server-2019-vs2019:current
-    resource_class: large
+      # 建议升级到 2022 版本，vs2019 版本较老
+      image: windows-server-2022-vs2022:current
+    # 修复：必须加上 windows. 前缀
+    resource_class: windows.large
+    shell: powershell.exe -ExecutionPolicy Bypass
     working_directory: C:/project
 
 jobs:
@@ -31,7 +32,7 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-            sudo apt-get install -y libssl-dev:arm64 pkg-config-aarch64-linux-gnu
+            sudo apt-get install -y libssl-dev:arm64
             rustup target add aarch64-unknown-linux-gnu
       - run:
           name: Build for Linux ARM64
@@ -48,14 +49,13 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install Rust
+          name: Install/Update Rust
           command: |
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-            echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bash_profile
+            rustup default stable
+            rustup target add aarch64-apple-darwin
       - run:
           name: Build for macOS ARM64
           command: |
-            source ~/.cargo/env
             cd rust
             cargo build --release --target aarch64-apple-darwin
       - persist_to_workspace:
@@ -68,19 +68,21 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install Rust
+          name: Setup Rust for Windows
           command: |
+            # Windows 镜像通常自带 rustup，直接更新即可
+            rustup update stable
             rustup default stable
-            rustup target add x86_64-pc-windows-gnu
+            rustup target add x86_64-pc-windows-msvc
       - run:
           name: Build for Windows x86_64
           command: |
             cd rust
-            cargo build --release --target x86_64-pc-windows-gnu
+            cargo build --release --target x86_64-pc-windows-msvc
       - persist_to_workspace:
           root: rust/target
           paths:
-            - x86_64-pc-windows-gnu/release/rsa-gui.exe
+            - x86_64-pc-windows-msvc/release/rsa-gui.exe
 
 workflows:
   build-all-platforms:
