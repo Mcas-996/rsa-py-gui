@@ -1,0 +1,87 @@
+version: 2.1
+
+executors:
+  rust-linux-arm:
+    docker:
+      - image: messari/linux_arm64:rust-latest
+    working_directory: ~/repo
+
+  rust-macos-arm:
+    macos:
+      xcode: "15.0.0"
+    environment:
+      - TARGET: aarch64-apple-darwin
+      - RUSTUP_HOME: /Users/distiller/.rustup
+      - CARGO_HOME: /Users/distiller/.cargo
+    working_directory: ~/repo
+
+  rust-windows:
+    machine:
+      image: windows-server-2022-vs2022:current
+    working_directory: C:/project
+
+jobs:
+  build-linux-arm:
+    executor: rust-linux-arm
+    steps:
+      - checkout
+      - run:
+          name: Rust setup
+          command: |
+            rustup default stable
+            rustup target add aarch64-unknown-linux-gnu
+      - run:
+          name: Build for Linux ARM64
+          command: |
+            cd rust
+            cargo build --release --target aarch64-unknown-linux-gnu
+      - persist_to_workspace:
+          root: rust/target
+          paths:
+            - aarch64-unknown-linux-gnu/release/rsa-gui
+
+  build-macos-arm:
+    executor: rust-macos-arm
+    steps:
+      - checkout
+      - run:
+          name: Install Rust
+          command: |
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+            echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bash_profile
+      - run:
+          name: Build for macOS ARM64
+          command: |
+            source ~/.cargo/env
+            cd rust
+            cargo build --release --target aarch64-apple-darwin
+      - persist_to_workspace:
+          root: rust/target
+          paths:
+            - aarch64-apple-darwin/release/rsa-gui
+
+  build-windows:
+    executor: rust-windows
+    steps:
+      - checkout
+      - run:
+          name: Install Rust
+          command: |
+            rustup default stable
+            rustup target add x86_64-pc-windows-gnu
+      - run:
+          name: Build for Windows x86_64
+          command: |
+            cd rust
+            cargo build --release --target x86_64-pc-windows-gnu
+      - persist_to_workspace:
+          root: rust/target
+          paths:
+            - x86_64-pc-windows-gnu/release/rsa-gui.exe
+
+workflows:
+  build-all-platforms:
+    jobs:
+      - build-linux-arm
+      - build-macos-arm
+      - build-windows
