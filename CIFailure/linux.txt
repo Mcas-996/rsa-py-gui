@@ -1,0 +1,40 @@
+Using the v2 container runtime. For more details see: https://discuss.circleci.com/t/docker-executor-infrastructure-upgrade/52282
+docker-agent version: 1.0.57945-d38058d
+task-agent version 1.0.307215-862d7aa0
+Downloading task-agent: success after 446.828942ms.
+System information:
+ Server Version: 5.5.2
+ Storage Driver: overlay
+  Backing Filesystem: xfs
+ Cgroup Driver: systemd
+ Cgroup Version: 2
+ Kernel Version: 6.8.0-1040-aws
+ Operating System: ubuntu
+ OSType: linux
+ Architecture: amd64
+
+Starting container public.ecr.aws/eks-distro/kubernetes/pause:3.6
+  image is cached as public.ecr.aws/eks-distro/kubernetes/pause:3.6, but refreshing...
+
+[1A[2K8389103237f2: Already exists [1B
+[1A[2K23d07b917726: Already exists [1B
+[1A[2K3c69a9ca2c95: Pulling fs layer [1B[1A[2K3c69a9ca2c95: Download complete [1B[1A[2K3c69a9ca2c95: Download complete [1BStarting container messari/linux_arm64:rust-latest
+Warning: No authentication provided, using CircleCI credentials for pulls from Docker Hub.
+  image cache not found on this host, downloading docker.io/messari/linux_arm64:rust-latest
+
+  Error pulling image messari/linux_arm64:rust-latest: Error response from daemon: denied: requested access to the resource is denied... retrying
+  image cache not found on this host, downloading docker.io/messari/linux_arm64:rust-latest
+
+  Error pulling image messari/linux_arm64:rust-latest: Error response from daemon: denied: requested access to the resource is denied... retrying
+  image cache not found on this host, downloading docker.io/messari/linux_arm64:rust-latest
+
+  Error pulling image messari/linux_arm64:rust-latest: Error response from daemon: denied: requested access to the resource is denied... retrying
+  image cache not found on this host, downloading docker.io/messari/linux_arm64:rust-latest
+
+  Error pulling image messari/linux_arm64:rust-latest: Error response from daemon: denied: requested access to the resource is denied... retrying
+  image cache not found on this host, downloading docker.io/messari/linux_arm64:rust-latest
+
+  Error pulling image messari/linux_arm64:rust-latest: Error response from daemon: denied: requested access to the resource is denied... retrying
+  image cache not found on this host, downloading docker.io/messari/linux_arm64:rust-latest
+
+Error response from daemon: denied: requested access to the resource is denied

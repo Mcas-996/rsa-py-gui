@@ -7,7 +7,7 @@ authors = ["RSA GUI"]
 
 [dependencies]
 slint = "1.14.1"
-openssl = "0.10"
+openssl = { version = "0.10", features = ["vendored"] }
 rsa = "0.7"
 rand = "0.8"
 base64 = "0.21"
